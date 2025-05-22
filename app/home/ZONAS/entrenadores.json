@@ -1,0 +1,19 @@
+{
+    "entrenadores": [
+      {
+        "id": "1",
+        "nombre": "Clarissa Loaiza",
+        "especialidad": "Musculación",
+        "descripcion": "Entrenador con más de 10 años de experiencia.",
+        "imagen": "https://via.placeholder.com/300"
+      },
+      {
+        "id": "2",
+        "nombre": "Ricardo Camarillo",
+        "especialidad": "Yoga",
+        "descripcion": "Especialista en yoga y meditación.",
+        "imagen": "https://via.placeholder.com/300"
+      }
+      
+    ]
+  }

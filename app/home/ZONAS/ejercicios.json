@@ -1,0 +1,30 @@
+[
+    {
+      "id": "ejercicio1",
+      "nombre": "Crunch abdominal",
+      "descripcion": "Ejercicio para trabajar los músculos abdominales.",
+      "duracion": "15 minutos",
+      "video": "https://example.com/crunch.mp4",
+      "imagen": "https://via.placeholder.com/300",
+      "zonaId": "zona1"
+    },
+    {
+      "id": "ejercicio2",
+      "nombre": "Plancha",
+      "descripcion": "Fortalece el núcleo y mejora la estabilidad.",
+      "duracion": "10 minutos",
+      "video": "https://example.com/plancha.mp4",
+      "imagen": "https://via.placeholder.com/300",
+      "zonaId": "zona1"
+    },
+    {
+      "id": "ejercicio3",
+      "nombre": "Press militar",
+      "descripcion": "Ejercicio para desarrollar los hombros.",
+      "duracion": "12 minutos",
+      "video": "https://example.com/press-militar.mp4",
+      "imagen": "https://via.placeholder.com/300",
+      "zonaId": "zona2"
+    }
+    
+  ]

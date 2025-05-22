@@ -1,0 +1,40 @@
+{
+    "zonas": [
+      {
+        "id": "zona1",
+        "nombre": "Zona 1 - Abdomen",
+        "descripcion": "Ejercicios para fortalecer los músculos abdominales y el núcleo.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/Zona1.jpeg"
+      },
+      {
+        "id": "zona2",
+        "nombre": "Zona 2 - Hombros",
+        "descripcion": "Ejercicios enfocados en los deltoides y estabilidad de los hombros.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/zona2.png"
+      },
+      {
+        "id": "zona3",
+        "nombre": "Zona 3 - Bíceps & Tríceps",
+        "descripcion": "Rutinas para desarrollar fuerza en brazos, bíceps y tríceps.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/zona3.png"
+      },
+      {
+        "id": "zona4",
+        "nombre": "Zona 4 - Pecho",
+        "descripcion": "Entrenamientos para fortalecer y definir los músculos del pecho.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/zona4.png"
+      },
+      {
+        "id": "zona5",
+        "nombre": "Zona 5 - Espalda",
+        "descripcion": "Rutinas para trabajar la espalda alta, media y baja.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/zona5.png"
+      },
+      {
+        "id": "zona6",
+        "nombre": "Zona 6 - Piernas",
+        "descripcion": "Ejercicios para fortalecer glúteos, femorales y cuádriceps.",
+        "imagen": "https://fitmexico.mx/wp-content/uploads/2025/01/zona6.png"
+      }
+    ]
+  }
