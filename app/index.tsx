@@ -52,9 +52,9 @@ export default function Index() {
       {/* Contenido */}
       <View style={styles.content}>
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: '#fff' }]}>Fit Gimnasio Macroplaza</Text>
+          <Text style={[styles.title, { color: '#fff' }]}>Aethrad</Text>
           <Text style={[styles.subtitle, { color: '#d3d3d3' }]}>
-            Tu espacio para el bienestar. Te queremos FIT.
+            Tu historial en tu bolsillo.
           </Text>
         </View>
 

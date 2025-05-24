@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useTheme } from '../themecontext';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../authContext';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-// URL de la API - cámbialo según el entorno
+// URL de la API - cámbiala según el entorno
 const API_URL = 'http://201.171.25.219:1338';
 
 // Modo debug para ver más información y diagnosticar problemas
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 // Token del médico (puedes moverlo a un archivo seguro si lo deseas)
 const TOKEN_MEDICO = "cbde2ceea36cd25b97cf9039c37974a3ad5253c81928ab6cf188148df16e8cd404a369cdf90d81174ec1acd8276e0bea125c696d9335ff79be7a0b94ad492009d66195b65b4d5f24406788b31a822486091f167e0f84734bb25c523f168a8a697557f388e0f5c45fb1eb1a3fab509cc14f57a298ecc08d30075aeca686345541";
@@ -158,7 +159,9 @@ export default function PlanScreen() {
   if (hasPermission === null) {
     return (
       <View style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#F0F0F0' }]}>
-        <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}>Solicitando permiso de cámara...</Text>
+        <Text style={[styles.statusText, { color: isDarkMode ? '#FFFFFF' : '#2D3748' }]}>
+          Solicitando permiso de cámara...
+        </Text>
       </View>
     );
   }
@@ -166,8 +169,15 @@ export default function PlanScreen() {
   if (hasPermission === false) {
     return (
       <View style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#F0F0F0' }]}>
-        <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}>Sin acceso a la cámara</Text>
-        <Button title="Solicitar Permiso" onPress={() => BarCodeScanner.requestPermissionsAsync()} />
+        <Text style={[styles.statusText, { color: isDarkMode ? '#FFFFFF' : '#2D3748' }]}>
+          Para usar esta función, necesitas dar permiso a la cámara
+        </Text>
+        <TouchableOpacity 
+          style={styles.accessibleButton}
+          onPress={() => BarCodeScanner.requestPermissionsAsync()}>
+          <Ionicons name="camera" size={24} color="#FFFFFF" style={{marginRight: 10}} />
+          <Text style={styles.accessibleButtonText}>Dar permiso a la cámara</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -180,12 +190,13 @@ export default function PlanScreen() {
       />
       
       {/* Overlay con instrucciones */}
-      <View style={[styles.scanOverlay, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)' }]}>
-        <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000', fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-          Escanea el código QR del expediente
+      <View style={[styles.scanOverlay, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)' }]}>
+        <Ionicons name="qr-code" size={36} color={isDarkMode ? '#FFFFFF' : '#1A365D'} style={{marginBottom: 16}} />
+        <Text style={[styles.overlayTitle, { color: isDarkMode ? '#FFFFFF' : '#2D3748' }]}>
+          Escanea el código QR
         </Text>
-        <Text style={{ color: isDarkMode ? '#E0E0E0' : '#444444', textAlign: 'center', marginHorizontal: 20 }}>
-          Coloca el código QR dentro del área de escaneo para acceder a tu expediente médico
+        <Text style={[styles.overlayText, { color: isDarkMode ? '#E0E0E0' : '#4A5568' }]}>
+          Coloca el código QR dentro del cuadro para acceder a tu expediente médico
         </Text>
       </View>
       
@@ -193,48 +204,32 @@ export default function PlanScreen() {
       <View style={styles.focusFrame} />
       
       {loading && (
-        <View style={[styles.loadingOverlay, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)' }]}>
-          <ActivityIndicator size="large" color="#25d366" />
-          <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000', marginTop: 10 }}>Validando código QR...</Text>
+        <View style={[styles.loadingOverlay, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)' }]}>
+          <ActivityIndicator size="large" color="#1A365D" style={{marginBottom: 20}} />
+          <Text style={[styles.loadingText, { color: isDarkMode ? '#FFFFFF' : '#2D3748' }]}>
+            Procesando código QR...
+          </Text>
         </View>
       )}
       
       {error && (
         <View style={[styles.errorContainer, { backgroundColor: isDarkMode ? '#300' : '#fee' }]}>
-          <Text style={{ color: isDarkMode ? '#ff6b6b' : '#d32f2f' }}>{error}</Text>
+          <Ionicons name="alert-circle" size={28} color={isDarkMode ? '#ff6b6b' : '#d32f2f'} style={{marginBottom: 8}} />
+          <Text style={{ color: isDarkMode ? '#ff6b6b' : '#d32f2f', fontSize: 18, fontWeight: '500' }}>{error}</Text>
         </View>
       )}
       
       {scanned && !loading && (
         <View style={styles.overlay}>
-          <Button title="Escanear de nuevo" onPress={() => {
-            setScanned(false);
-            setError(null);
-          }} />
-        </View>
-      )}
-
-      {/* Panel de depuración */}
-      {DEBUG_MODE && (
-        <View style={[styles.debugPanel, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)' }]}>
-          <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000', fontWeight: 'bold' }}>Información de Depuración</Text>
-          <Text style={{ color: isDarkMode ? '#FFFFFF' : '#000000', marginBottom: 5 }}>
-            Último QR: {lastScannedData ? lastScannedData.substring(0, 30) : 'Ninguno'}
-          </Text>
-          <ScrollView style={styles.debugScroll}>
-            {debugInfo.map((log, index) => (
-              <Text key={index} style={{ color: isDarkMode ? '#FFFFFF' : '#000000', fontSize: 12 }}>
-                {log}
-              </Text>
-            ))}
-          </ScrollView>
-          <Button 
-            title="Limpiar Logs" 
+          <TouchableOpacity 
+            style={styles.accessibleButton}
             onPress={() => {
-              setDebugInfo([]);
-              setLastScannedData('');
-            }} 
-          />
+              setScanned(false);
+              setError(null);
+            }}>
+            <Ionicons name="scan" size={24} color="#FFFFFF" style={{marginRight: 10}} />
+            <Text style={styles.accessibleButtonText}>Escanear de nuevo</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -249,26 +244,53 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    bottom: 50,
-    left: 0,
-    right: 0,
+    bottom: 80,
+    left: 24,
+    right: 24,
     alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 22,
+    textAlign: 'center',
+    marginHorizontal: 30,
+    marginBottom: 30,
+    lineHeight: 32,
   },
   scanOverlay: {
     position: 'absolute',
     top: 60,
     left: 20,
     right: 20,
-    padding: 20,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 16,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  overlayTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  overlayText: {
+    fontSize: 18,
+    textAlign: 'center',
+    lineHeight: 26,
+    marginHorizontal: 10,
   },
   focusFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#25d366',
-    borderRadius: 20,
+    width: 280,
+    height: 280,
+    borderWidth: 4,
+    borderColor: '#1A365D',
+    borderRadius: 24,
     backgroundColor: 'transparent',
   },
   loadingOverlay: {
@@ -281,26 +303,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
+  loadingText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
   errorContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 110,
     left: 20,
     right: 20,
-    padding: 15,
-    borderRadius: 8,
+    padding: 20,
+    borderRadius: 16,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  debugPanel: {
-    position: 'absolute',
-    bottom: 120,
-    left: 10,
-    right: 10,
-    padding: 10,
-    borderRadius: 8,
-    maxHeight: 200,
+  accessibleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A365D',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 16,
+    minWidth: 250,
+    minHeight: 60,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
-  debugScroll: {
-    maxHeight: 120,
-    marginVertical: 5,
-  }
+  accessibleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });

@@ -155,6 +155,8 @@ export default function Index({ navigation }: IndexProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedConsulta, setSelectedConsulta] = useState<Consulta | null>(null);
+  const [consultaViewMode, setConsultaViewMode] = useState<'list' | 'detail'>('list');
   const [modalVisible, setModalVisible] = useState(false);
   const [pressPosition, setPressPosition] = useState({ x: 0, y: 0 });
   const [cardLayout, setCardLayout] = useState<LayoutRectangle | null>(null);
@@ -343,8 +345,14 @@ export default function Index({ navigation }: IndexProps) {
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
-  const handleConsultasPress = () => {
-    navigation.navigate('Consultas', { paciente: pacienteData });
+  const handleConsultasPress = (event: any) => {
+    event.currentTarget.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+      setSelectedSection('consultas');
+      setConsultaViewMode('list');
+      setSelectedConsulta(null);
+      setCardLayout({ x: pageX, y: pageY, width, height });
+      animateModal(true);
+    });
   };
 
   const handleEstudiosPress = () => {
@@ -416,7 +424,7 @@ export default function Index({ navigation }: IndexProps) {
 
   const renderModalContent = () => {
     switch (selectedSection) {
-      case 'ultima_consulta':
+      case 'consultas':
         return (
           <View style={styles.modalContent}>
             <View style={[styles.expedienteHeader, {
@@ -426,7 +434,7 @@ export default function Index({ navigation }: IndexProps) {
                 <View style={[styles.expedienteLogo, {
                   backgroundColor: isDarkMode ? 'rgba(66, 153, 225, 0.15)' : 'rgba(43, 108, 176, 0.1)'
                 }]}>
-                  <FontAwesome5 name="file-medical-alt" size={24} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                  <FontAwesome5 name="calendar-check" size={24} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
                 </View>
                 <View style={styles.expedienteTitle}>
                   <Text style={[styles.modalTitle, { 
@@ -434,264 +442,409 @@ export default function Index({ navigation }: IndexProps) {
                     textAlign: 'left',
                     marginBottom: 4
                   }]}>
-                    Expediente Médico
+                    {consultaViewMode === 'list' ? 'Historial de Consultas' : 'Detalle de Consulta'}
                   </Text>
                   <Text style={[styles.expedienteSubtitle, {
                     color: isDarkMode ? '#A0AEC0' : '#718096'
                   }]}>
-                    CONSULTA MÉDICA #{pacienteData?.consultas[pacienteData.consultas.length - 1].documentId?.slice(0,8).toUpperCase() || ''}
+                    {consultaViewMode === 'list' 
+                      ? `${pacienteData?.consultas.length || 0} consultas registradas` 
+                      : `CONSULTA #${selectedConsulta?.documentId?.slice(0,8).toUpperCase() || ''}`}
                   </Text>
                 </View>
               </View>
 
-              <View style={[styles.expedienteBadge, {
-                backgroundColor: isDarkMode ? 'rgba(66, 153, 225, 0.15)' : 'rgba(43, 108, 176, 0.1)'
-              }]}>
-                <Text style={[styles.expedienteBadgeText, {
-                  color: isDarkMode ? '#4299E1' : '#2B6CB0'
-                }]}>
-                  {pacienteData?.consultas && pacienteData.consultas.length > 0 ? 
-                    formatDate(pacienteData.consultas[pacienteData.consultas.length - 1].fecha_consulta) : ''}
-                </Text>
-              </View>
+              {consultaViewMode === 'detail' && (
+                <TouchableOpacity 
+                  style={[styles.expedienteBadge, {
+                    backgroundColor: isDarkMode ? 'rgba(66, 153, 225, 0.2)' : 'rgba(43, 108, 176, 0.15)',
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    borderRadius: 24,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    alignSelf: 'flex-start',
+                    marginTop: 8
+                  }]}
+                  onPress={() => {
+                    setConsultaViewMode('list');
+                    setSelectedConsulta(null);
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={20} color={isDarkMode ? "#4299E1" : "#2B6CB0"} style={{marginRight: 8}} />
+                  <Text style={[styles.expedienteBadgeText, {
+                    color: isDarkMode ? '#4299E1' : '#2B6CB0',
+                    fontSize: 16,
+                    fontWeight: 'bold'
+                  }]}>
+                    Volver a la lista
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-            {pacienteData?.consultas && pacienteData.consultas.length > 0 && (
-              <View>
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="user-md" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Información del médico</Text>
+            {pacienteData?.consultas && pacienteData.consultas.length > 0 ? (
+              <>
+                {consultaViewMode === 'list' ? (
+                  <View>
+                    <Text style={{
+                      fontSize: 18,
+                      color: isDarkMode ? '#E2E8F0' : '#2D3748',
+                      marginBottom: 16,
+                      textAlign: 'center',
+                      fontWeight: '500'
+                    }}>
+                      Toca en una consulta para ver sus detalles
+                    </Text>
+                    {pacienteData.consultas
+                      .sort((a, b) => new Date(b.fecha_consulta).getTime() - new Date(a.fecha_consulta).getTime())
+                      .map((consulta, index) => (
+                        <TouchableOpacity 
+                          key={consulta.id} 
+                          style={[styles.consultaCard, {
+                            backgroundColor: isDarkMode ? 'rgba(45, 55, 72, 0.3)' : '#F7FAFC',
+                            borderLeftColor: '#2C5282',
+                            marginBottom: index === pacienteData.consultas.length - 1 ? 0 : 24,
+                            borderLeftWidth: 8,
+                          }]}
+                          onPress={() => {
+                            setSelectedConsulta(consulta);
+                            setConsultaViewMode('detail');
+                          }}
+                        >
+                          <View style={[styles.consultaCardContent, { padding: 20 }]}>
+                            <Text style={[styles.consultaCardDate, {
+                              color: isDarkMode ? '#FFFFFF' : '#1A365D',
+                              backgroundColor: isDarkMode ? 'rgba(26, 54, 93, 0.6)' : 'rgba(26, 54, 93, 0.1)',
+                              fontSize: 16,
+                              fontWeight: 'bold',
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 16,
+                              alignSelf: 'flex-start',
+                              marginBottom: 12
+                            }]}>
+                              {formatDate(consulta.fecha_consulta)}
+                            </Text>
+                            
+                            <Text style={[styles.consultaCardDiagnosis, {
+                              color: isDarkMode ? '#FFFFFF' : '#2D3748',
+                              fontSize: 20,
+                              fontWeight: 'bold',
+                              marginBottom: 16,
+                              lineHeight: 28
+                            }]}>
+                              {capitalizeFirstLetter(consulta.diagnostico)}
+                            </Text>
+                            
+                            <View style={[styles.consultaCardDoctor, { marginBottom: 16 }]}>
+                              <FontAwesome5 name="user-md" size={20} color={isDarkMode ? "#4299E1" : "#2B6CB0"} style={{marginRight: 12}} />
+                              <Text style={{
+                                color: isDarkMode ? '#E2E8F0' : '#4A5568',
+                                fontSize: 18,
+                                fontWeight: '500'
+                              }}>
+                                {consulta.medico && typeof consulta.medico === 'object' && consulta.medico.nombre
+                                  ? `Dr. ${capitalizeFirstLetter(consulta.medico.nombre)} ${capitalizeFirstLetter(consulta.medico.apellidos || '')}`
+                                  : 'Médico no especificado'}
+                              </Text>
+                            </View>
+                            
+                            <View style={[styles.consultaCardFooter, {
+                              borderTopWidth: 1,
+                              borderTopColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                              paddingTop: 16,
+                              marginTop: 8
+                            }]}>
+                              <TouchableOpacity 
+                                style={[styles.consultaCardButton, {
+                                  backgroundColor: '#1A365D',
+                                  paddingVertical: 12,
+                                  paddingHorizontal: 20,
+                                  borderRadius: 12,
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  minWidth: 160
+                                }]}
+                                onPress={() => {
+                                  setSelectedConsulta(consulta);
+                                  setConsultaViewMode('detail');
+                                }}
+                              >
+                                <Text style={{
+                                  color: '#FFFFFF',
+                                  fontSize: 16,
+                                  fontWeight: 'bold',
+                                  marginRight: 8
+                                }}>Ver detalles</Text>
+                                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
                   </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteRow, {
-                      borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                    }]}>
-                      <Text style={[styles.expedienteLabel, {
-                        color: isDarkMode ? '#A0AEC0' : '#718096'
-                      }]}>Médico tratante</Text>
-                      <Text style={[styles.expedienteValue, {
-                        color: isDarkMode ? '#FFFFFF' : '#2D3748'
+                ) : (
+                  selectedConsulta && (
+                    <View>
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
                       }]}>
-                        {(() => {
-                          const ultimaConsulta = pacienteData.consultas[pacienteData.consultas.length - 1];
-                          return ultimaConsulta.medico && 
-                            typeof ultimaConsulta.medico === 'object' && 
-                            ultimaConsulta.medico.nombre ? 
-                            `Dr. ${capitalizeFirstLetter(ultimaConsulta.medico.nombre)} ${capitalizeFirstLetter(ultimaConsulta.medico.apellidos || '')}` :
-                            'Médico no especificado';
-                        })()}
-                      </Text>
-                    </View>
-                    <View style={[styles.expedienteRow, {
-                      borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                    }]}>
-                      <Text style={[styles.expedienteLabel, {
-                        color: isDarkMode ? '#A0AEC0' : '#718096'
-                      }]}>Especialidad</Text>
-                      <Text style={[styles.expedienteValue, {
-                        color: isDarkMode ? '#FFFFFF' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].medico?.especialidad || 'No especificada')}
-                      </Text>
-                    </View>
-                    <View style={[styles.expedienteRow, {
-                      borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                    }]}>
-                      <Text style={[styles.expedienteLabel, {
-                        color: isDarkMode ? '#A0AEC0' : '#718096'
-                      }]}>Cédula profesional</Text>
-                      <Text style={[styles.expedienteValue, {
-                        color: isDarkMode ? '#FFFFFF' : '#2D3748'
-                      }]}>
-                        {pacienteData.consultas[pacienteData.consultas.length - 1].medico?.cedula_profesional || 'No registrada'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="clipboard-list" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Detalles de la consulta</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteRow, {
-                      borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                    }]}>
-                      <Text style={[styles.expedienteLabel, {
-                        color: isDarkMode ? '#A0AEC0' : '#718096'
-                      }]}>Tipo de consulta</Text>
-                      <Text style={[styles.expedienteValue, {
-                        color: isDarkMode ? '#FFFFFF' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].tipo_consulta || 'Consulta regular')}
-                      </Text>
-                    </View>
-
-                    {pacienteData.consultas[pacienteData.consultas.length - 1].motivo_consulta && (
-                      <View style={[styles.expedienteRow, {
-                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                      }]}>
-                        <Text style={[styles.expedienteLabel, {
-                          color: isDarkMode ? '#A0AEC0' : '#718096'
-                        }]}>Motivo</Text>
-                        <Text style={[styles.expedienteValue, {
-                          color: isDarkMode ? '#FFFFFF' : '#2D3748'
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                          paddingBottom: 12
                         }]}>
-                          {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].motivo_consulta)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="heartbeat" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Diagnóstico clínico</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteDiagnosisBox, {
-                      backgroundColor: isDarkMode ? 'rgba(66, 153, 225, 0.08)' : 'rgba(43, 108, 176, 0.05)',
-                      borderLeftColor: isDarkMode ? '#4299E1' : '#2B6CB0'
-                    }]}>
-                      <Text style={[styles.expedienteDiagnosisText, {
-                        color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].diagnostico)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="prescription-bottle-alt" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Receta médica</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteTextBox, {
-                      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                    }]}>
-                      <Text style={[styles.expedienteTextContent, {
-                        color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].receta || 'No se emitió receta médica')}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="notes-medical" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Observaciones</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteTextBox, {
-                      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                    }]}>
-                      <Text style={[styles.expedienteTextContent, {
-                        color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].observaciones || 'No hay observaciones adicionales')}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={[styles.expedienteSection, {
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="vial" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Estudios recomendados</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    <View style={[styles.expedienteTextBox, {
-                      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                    }]}>
-                      <Text style={[styles.expedienteTextContent, {
-                        color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                      }]}>
-                        {capitalizeFirstLetter(pacienteData.consultas[pacienteData.consultas.length - 1].estudios_recomendados || 'No se recomendaron estudios')}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={[styles.expedienteSection, { 
-                  borderBottomWidth: 0, 
-                  marginBottom: 20,
-                  borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-                }]}>
-                  <View style={[styles.expedienteSectionHeader, {
-                    borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                  }]}>
-                    <FontAwesome5 name="paperclip" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                    <Text style={[styles.expedienteSectionTitle, {
-                      color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                    }]}>Archivos adjuntos</Text>
-                  </View>
-                  <View style={styles.expedienteSectionContent}>
-                    {pacienteData.consultas[pacienteData.consultas.length - 1].archivos_adjuntos && 
-                    pacienteData.consultas[pacienteData.consultas.length - 1].archivos_adjuntos.length > 0 ? (
-                      pacienteData.consultas[pacienteData.consultas.length - 1].archivos_adjuntos.map((archivo, index) => (
-                        <View key={index} style={[styles.expedienteAttachment, {
-                          backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-                        }]}>
-                          <FontAwesome5 name="file-medical" size={14} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
-                          <Text style={[styles.expedienteAttachmentText, {
-                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
-                          }]}>
-                            {archivo.name || `Archivo adjunto ${index + 1}`}
-                          </Text>
+                          <FontAwesome5 name="user-md" size={20} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748',
+                            fontSize: 20,
+                            marginLeft: 12
+                          }]}>Información del médico</Text>
                         </View>
-                      ))
-                    ) : (
-                      <Text style={[styles.expedienteTextContent, {
-                        color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteRow, {
+                            borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                          }]}>
+                            <Text style={[styles.expedienteLabel, {
+                              color: isDarkMode ? '#A0AEC0' : '#718096',
+                              fontSize: 18
+                            }]}>Médico tratante</Text>
+                            <Text style={[styles.expedienteValue, {
+                              color: isDarkMode ? '#FFFFFF' : '#2D3748',
+                              fontSize: 18
+                            }]}>
+                              {selectedConsulta.medico && 
+                                typeof selectedConsulta.medico === 'object' && 
+                                selectedConsulta.medico.nombre ? 
+                                `Dr. ${capitalizeFirstLetter(selectedConsulta.medico.nombre)} ${capitalizeFirstLetter(selectedConsulta.medico.apellidos || '')}` :
+                                'Médico no especificado'}
+                            </Text>
+                          </View>
+                          <View style={[styles.expedienteRow, {
+                            borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                          }]}>
+                            <Text style={[styles.expedienteLabel, {
+                              color: isDarkMode ? '#A0AEC0' : '#718096',
+                              fontSize: 18
+                            }]}>Especialidad</Text>
+                            <Text style={[styles.expedienteValue, {
+                              color: isDarkMode ? '#FFFFFF' : '#2D3748',
+                              fontSize: 18
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.medico?.especialidad || 'No especificada')}
+                            </Text>
+                          </View>
+                          <View style={[styles.expedienteRow, {
+                            borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                          }]}>
+                            <Text style={[styles.expedienteLabel, {
+                              color: isDarkMode ? '#A0AEC0' : '#718096',
+                              fontSize: 18
+                            }]}>Cédula profesional</Text>
+                            <Text style={[styles.expedienteValue, {
+                              color: isDarkMode ? '#FFFFFF' : '#2D3748',
+                              fontSize: 18
+                            }]}>
+                              {selectedConsulta.medico?.cedula_profesional || 'No registrada'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
                       }]}>
-                        No hay archivos adjuntos
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="clipboard-list" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Detalles de la consulta</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteRow, {
+                            borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                          }]}>
+                            <Text style={[styles.expedienteLabel, {
+                              color: isDarkMode ? '#A0AEC0' : '#718096'
+                            }]}>Tipo de consulta</Text>
+                            <Text style={[styles.expedienteValue, {
+                              color: isDarkMode ? '#FFFFFF' : '#2D3748'
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.tipo_consulta || 'Consulta regular')}
+                            </Text>
+                          </View>
+
+                          {selectedConsulta.motivo_consulta && (
+                            <View style={[styles.expedienteRow, {
+                              borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                            }]}>
+                              <Text style={[styles.expedienteLabel, {
+                                color: isDarkMode ? '#A0AEC0' : '#718096'
+                              }]}>Motivo</Text>
+                              <Text style={[styles.expedienteValue, {
+                                color: isDarkMode ? '#FFFFFF' : '#2D3748'
+                              }]}>
+                                {capitalizeFirstLetter(selectedConsulta.motivo_consulta)}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                      }]}>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="heartbeat" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Diagnóstico clínico</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteDiagnosisBox, {
+                            backgroundColor: isDarkMode ? 'rgba(66, 153, 225, 0.12)' : 'rgba(43, 108, 176, 0.08)',
+                            borderLeftColor: isDarkMode ? '#4299E1' : '#2B6CB0',
+                            borderLeftWidth: 6,
+                            padding: 16,
+                            marginVertical: 8
+                          }]}>
+                            <Text style={[styles.expedienteDiagnosisText, {
+                              color: isDarkMode ? '#E2E8F0' : '#2D3748',
+                              fontSize: 20,
+                              lineHeight: 28
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.diagnostico)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                      }]}>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="prescription-bottle-alt" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Receta médica</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteTextBox, {
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                          }]}>
+                            <Text style={[styles.expedienteTextContent, {
+                              color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.receta || 'No se emitió receta médica')}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                      }]}>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="notes-medical" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Observaciones</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteTextBox, {
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                          }]}>
+                            <Text style={[styles.expedienteTextContent, {
+                              color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.observaciones || 'No hay observaciones adicionales')}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={[styles.expedienteSection, {
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                      }]}>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="vial" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Estudios recomendados</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          <View style={[styles.expedienteTextBox, {
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                          }]}>
+                            <Text style={[styles.expedienteTextContent, {
+                              color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                            }]}>
+                              {capitalizeFirstLetter(selectedConsulta.estudios_recomendados || 'No se recomendaron estudios')}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={[styles.expedienteSection, { 
+                        borderBottomWidth: 0, 
+                        marginBottom: 20,
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                      }]}>
+                        <View style={[styles.expedienteSectionHeader, {
+                          borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }]}>
+                          <FontAwesome5 name="paperclip" size={16} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                          <Text style={[styles.expedienteSectionTitle, {
+                            color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                          }]}>Archivos adjuntos</Text>
+                        </View>
+                        <View style={styles.expedienteSectionContent}>
+                          {selectedConsulta.archivos_adjuntos && 
+                          selectedConsulta.archivos_adjuntos.length > 0 ? (
+                            selectedConsulta.archivos_adjuntos.map((archivo, index) => (
+                              <View key={index} style={[styles.expedienteAttachment, {
+                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+                              }]}>
+                                <FontAwesome5 name="file-medical" size={14} color={isDarkMode ? "#4299e1" : "#2b6cb0"} />
+                                <Text style={[styles.expedienteAttachmentText, {
+                                  color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                                }]}>
+                                  {archivo.name || `Archivo adjunto ${index + 1}`}
+                                </Text>
+                              </View>
+                            ))
+                          ) : (
+                            <Text style={[styles.expedienteTextContent, {
+                              color: isDarkMode ? '#E2E8F0' : '#2D3748'
+                            }]}>
+                              No hay archivos adjuntos
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  )
+                )}
+              </>
+            ) : (
+              <View style={styles.emptyConsultasContainer}>
+                <FontAwesome5 name="calendar-times" size={48} color={isDarkMode ? "#A0AEC0" : "#CBD5E0"} style={{marginBottom: 16}} />
+                <Text style={[styles.emptyConsultasText, {
+                  color: isDarkMode ? '#E2E8F0' : '#4A5568'
+                }]}>
+                  No hay consultas registradas
+                </Text>
               </View>
             )}
           </View>
@@ -1182,7 +1335,7 @@ export default function Index({ navigation }: IndexProps) {
                 tint="dark"
               />
               <TouchableWithoutFeedback>
-                <View style={styles.modalWrapper}>
+                <SafeAreaView style={styles.modalWrapper}>
                   <Animated.View
                     style={[
                       styles.modalView,
@@ -1238,7 +1391,7 @@ export default function Index({ navigation }: IndexProps) {
                       </View>
           </TouchableOpacity>
                   </Animated.View>
-        </View>
+        </SafeAreaView>
               </TouchableWithoutFeedback>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -1500,8 +1653,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 24,
     paddingTop: 20,
-    width: '90%',
-    maxHeight: '80%',
+    width: '94%',
+    maxHeight: '80%', // Reducir la altura máxima
+    marginTop: Platform.OS === 'ios' ? 60 : 20, // Aumentar el margen superior en iOS
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1543,6 +1697,7 @@ const styles = StyleSheet.create({
   modalWrapper: {
     alignItems: 'center',
     width: '100%',
+    paddingTop: Platform.OS === 'ios' ? 40 : 0, // Añadir padding superior en iOS
   },
   contentContainer: {
     flex: 1,
@@ -1733,5 +1888,61 @@ const styles = StyleSheet.create({
   expedienteAttachmentText: {
     marginLeft: 8,
     fontSize: 14,
+  },
+  consultaCard: {
+    borderRadius: 16,
+    borderLeftWidth: 6,
+    overflow: 'hidden',
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  consultaCardContent: {
+    padding: 20,
+  },
+  consultaCardDate: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  consultaCardDiagnosis: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 14,
+    lineHeight: 26,
+  },
+  consultaCardDoctor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  consultaCardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
+    paddingTop: 12,
+    marginTop: 4,
+    alignItems: 'flex-end',
+  },
+  consultaCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emptyConsultasContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginTop: 20
+  },
+  emptyConsultasText: {
+    fontSize: 20,
+    textAlign: 'center',
+    lineHeight: 28
   },
 });
