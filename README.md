@@ -1,6 +1,6 @@
-# FrontDoc
+# Aethrad
 
-FrontDoc es una aplicación desarrollada con Expo y React Native que permite gestionar y visualizar información médica de manera sencilla y eficiente. Está pensada para facilitar la organización de documentos, citas y datos relevantes para pacientes y profesionales de la salud.
+Aethrad es una aplicación desarrollada con Expo y React Native que permite gestionar y visualizar información médica de manera sencilla y eficiente. Está pensada para facilitar la organización de documentos, citas y datos relevantes para pacientes y profesionales de la salud.
 
 ## Características principales
 
