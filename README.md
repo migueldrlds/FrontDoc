@@ -22,16 +22,3 @@ Aethrad es una aplicación desarrollada con Expo y React Native que permite gest
    ```
 
 Desde la terminal podrás elegir abrir la app en un emulador Android, simulador iOS o en tu dispositivo físico usando Expo Go.
-
-## Estructura del proyecto
-
-- El código principal se encuentra en la carpeta `app`.
-- Utiliza enrutamiento basado en archivos para una navegación sencilla.
-
-## Contribuciones
-
-¡Las contribuciones son bienvenidas! Si deseas mejorar la aplicación, por favor abre un issue o envía un pull request.
-
-## Licencia
-
-Este proyecto está bajo la licencia MIT.
